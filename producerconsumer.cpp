@@ -1,108 +1,97 @@
 #include <iostream>
-#include <pthread.h>
-#include <semaphore.h>
-#include <unistd.h>
-
 using namespace std;
 
-#define BUFFER_SIZE 5
+class Semaphore {
+    int val;
 
-int buffer[BUFFER_SIZE];
-
-int in = 0;
-int out = 0;
-
-sem_t empty;             // Empty slots in buffer
-sem_t full;              // Filled slots in buffer
-
-pthread_mutex_t mutex;   // Protects buffer access
-
-// Producer Function
-void* producer(void* arg)
-{
-    for (int i = 1; i <= 5; i++)
-    {
-        int item = i;
-
-        sleep(1);
-
-        // Wait if buffer is full
-        sem_wait(&empty);
-
-        pthread_mutex_lock(&mutex);
-
-        buffer[in] = item;
-
-        cout << "Produced: "
-             << item
-             << " at index "
-             << in << endl;
-
-        in = (in + 1) % BUFFER_SIZE;
-
-        pthread_mutex_unlock(&mutex);
-
-        // Signal that one more item is available
-        sem_post(&full);
+public:
+    Semaphore(int v) {
+        val = v;
     }
 
-    return NULL;
-}
-
-// Consumer Function
-void* consumer(void* arg)
-{
-    for (int i = 1; i <= 5; i++)
-    {
-        sleep(2);
-
-        // Wait if buffer is empty
-        sem_wait(&full);
-
-        pthread_mutex_lock(&mutex);
-
-        int item = buffer[out];
-
-        cout << "Consumed: "
-             << item
-             << " from index "
-             << out << endl;
-
-        out = (out + 1) % BUFFER_SIZE;
-
-        pthread_mutex_unlock(&mutex);
-
-        // Signal that one more slot is free
-        sem_post(&empty);
+    bool wait() {
+        if (val > 0) {
+            val--;
+            return true;
+        }
+        return false;
     }
 
-    return NULL;
-}
+    void signal() {
+        val++;
+    }
+};
 
-int main()
-{
-    pthread_t prod, cons;
+class ProducerConsumer {
+    Semaphore mutex, empty, full;
 
-    // Initialize semaphores
-    sem_init(&empty, 0, BUFFER_SIZE);
-    sem_init(&full, 0, 0);
+    int buffer[5];
+    int in, out;
 
-    // Initialize mutex
-    pthread_mutex_init(&mutex, NULL);
+public:
+    ProducerConsumer() : mutex(1), empty(5), full(0) {
+        in = 0;
+        out = 0;
+    }
 
-    // Create threads
-    pthread_create(&prod, NULL, producer, NULL);
-    pthread_create(&cons, NULL, consumer, NULL);
+    void produce(int item) {
 
-    // Wait for threads
-    pthread_join(prod, NULL);
-    pthread_join(cons, NULL);
+        if (empty.wait()) {
 
-    // Destroy semaphores and mutex
-    sem_destroy(&empty);
-    sem_destroy(&full);
+            mutex.wait();
 
-    pthread_mutex_destroy(&mutex);
+            buffer[in] = item;
+
+            cout << "Produced: " << item << endl;
+
+            in = (in + 1) % 5;
+
+            mutex.signal();
+
+            full.signal();
+        }
+        else {
+            cout << "Buffer Full!" << endl;
+        }
+    }
+
+    void consume() {
+
+        if (full.wait()) {
+
+            mutex.wait();
+
+            int item = buffer[out];
+
+            cout << "Consumed: " << item << endl;
+
+            out = (out + 1) % 5;
+
+            mutex.signal();
+
+            empty.signal();
+        }
+        else {
+            cout << "Buffer Empty!" << endl;
+        }
+    }
+};
+
+int main() {
+
+    ProducerConsumer p;
+
+    p.produce(10);
+    p.produce(20);
+    p.produce(30);
+
+    p.consume();
+    p.consume();
+
+    p.produce(40);
+
+    p.consume();
+    p.consume();
 
     return 0;
 }

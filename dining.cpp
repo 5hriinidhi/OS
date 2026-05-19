@@ -1,96 +1,89 @@
 #include <iostream>
-#include <pthread.h>
-#include <semaphore.h>
-#include <unistd.h>
-
 using namespace std;
 
-#define N 5
+class Semaphore {
+    int val;
 
-// Each fork is represented by a semaphore
-sem_t forks[N];
-
-// Philosopher Function
-void* philosopher(void* arg)
-{
-    int id = *(int*)arg;
-
-    int left  = id;
-    int right = (id + 1) % N;
-
-    while (true)
-    {
-        // Thinking
-        cout << "Philosopher "
-             << id
-             << " is THINKING"
-             << endl;
-
-        sleep(1);
-
-        // Deadlock avoidance:
-        // Last philosopher picks right fork first
-        if (id == N - 1)
-        {
-            sem_wait(&forks[right]);
-            sem_wait(&forks[left]);
-        }
-        else
-        {
-            sem_wait(&forks[left]);
-            sem_wait(&forks[right]);
-        }
-
-        // Eating
-        cout << "Philosopher "
-             << id
-             << " is EATING"
-             << endl;
-
-        sleep(1);
-
-        // Put down forks
-        sem_post(&forks[left]);
-        sem_post(&forks[right]);
-
-        cout << "Philosopher "
-             << id
-             << " put down forks"
-             << endl;
+public:
+    Semaphore(int v) {
+        val = v;
     }
 
-    return NULL;
-}
-
-int main()
-{
-    pthread_t philosophers[N];
-    int ids[N];
-
-    // Initialize semaphores for forks
-    for (int i = 0; i < N; i++)
-        sem_init(&forks[i], 0, 1);
-
-    // Create philosopher threads
-    for (int i = 0; i < N; i++)
-    {
-        ids[i] = i;
-
-        pthread_create(
-            &philosophers[i],
-            NULL,
-            philosopher,
-            &ids[i]
-        );
+    bool wait() {
+        if (val > 0) {
+            val--;
+            return true;
+        }
+        return false;
     }
 
-    // Wait for philosopher threads
-    for (int i = 0; i < N; i++)
-        pthread_join(philosophers[i], NULL);
+    void signal() {
+        val++;
+    }
+};
 
-    // Destroy semaphores
-    for (int i = 0; i < N; i++)
-        sem_destroy(&forks[i]);
+class DiningPhilosopher {
+
+    Semaphore fork[5];
+
+public:
+
+    DiningPhilosopher()
+        : fork{Semaphore(1), Semaphore(1),
+               Semaphore(1), Semaphore(1),
+               Semaphore(1)} {}
+
+    void eat(int i) {
+
+        int left = i;
+        int right = (i + 1) % 5;
+
+        if (fork[left].wait()) {
+
+            cout << "Philosopher "
+                 << i + 1
+                 << " picked left fork\n";
+
+            if (fork[right].wait()) {
+
+                cout << "Philosopher "
+                     << i + 1
+                     << " picked right fork\n";
+
+                cout << "Philosopher "
+                     << i + 1
+                     << " is Eating\n";
+
+                fork[right].signal();
+
+                fork[left].signal();
+
+                cout << "Philosopher "
+                     << i + 1
+                     << " released forks\n";
+            }
+            else {
+
+                fork[left].signal();
+
+                cout << "Right fork not available\n";
+            }
+        }
+        else {
+            cout << "Left fork not available\n";
+        }
+    }
+};
+
+int main() {
+
+    DiningPhilosopher d;
+
+    d.eat(0);
+    d.eat(1);
+    d.eat(2);
+    d.eat(3);
+    d.eat(4);
 
     return 0;
 }
