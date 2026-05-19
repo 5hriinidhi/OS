@@ -1,0 +1,187 @@
+S-program.sh
+# INPUT AND SUM
+echo "Enter first number:"
+read a
+
+echo "Enter second number:"
+read b
+
+sum=`expr $a + $b`
+echo "Sum = $sum"
+
+
+#SQUARE WITH INPUT
+echo "Enter a number:"
+read n
+
+sq=`expr $n \* $n`
+echo "Square is $sq"
+
+
+#TO CHECK IF NUMBER POSITIVE NEGATIVE
+echo "Enter a number:"
+read x
+
+if [ $x -gt 0 ]
+then
+    echo "Positive number"
+else
+    echo "Negative or zero"
+fi
+
+
+#TAKING INPUT IN ARRAY
+echo "Enter 5 numbers:"
+for i in {0..4}
+do
+    read arr[$i]
+done
+
+echo "Array elements are:"
+for i in {0..4}
+do
+    echo ${arr[$i]}
+done
+
+# LOOP WITH INPUT - TABLE OF N
+echo "Enter a number:"
+read n
+
+for i in {1..10}
+do
+    echo `expr $n \* $i`
+done
+
+
+# FACTORIAL FUNCTION
+factorial()
+{
+    num=$1
+    fact=1
+
+    while [ $num -gt 1 ]
+    do
+        fact=`expr $fact \* $num`
+        num=`expr $num - 1`
+    done
+
+    echo "Factorial is $fact"
+}
+
+echo "Enter a number:"
+read n
+factorial $n
+
+
+
+# PRIME NUMBER
+isprime()
+{
+    n=$1
+    i=2
+
+    while [ $i -lt $n ]
+    do
+        if [ `expr $n % $i` -eq 0 ]
+        then
+            echo "Not Prime"
+            return
+        fi
+        i=`expr $i + 1`
+    done
+
+    echo "Prime Number"
+}
+
+echo "Enter number:"
+read num
+isprime $num
+
+
+
+# FIBONACCI
+echo "Enter the number of terms : "
+read n
+
+a=0
+b=1
+i=1
+
+echo "Fibonacci terms :"
+
+while [ $i -le $n ]
+do
+  echo $a
+  c=`expr $a + $b`
+  a=$b
+  b=$c
+  i=`expr $i + 1`
+done
+
+
+# ARGUMENTS
+
+echo "Program Name : $0"
+echo "First Argument : $1"
+echo "Second Argument : $2"
+echo "Total Arguments : $#"
+echo "All Arguments : $*"
+
+
+# SUM AVG MIN MAX
+echo "Number of inputs : "
+read n
+i=1
+sum=0
+
+echo "Enter $n numbers :"
+read num
+max=$num
+min=$num
+sum=$num
+
+i=2
+while [ $i -le $n ]
+do
+  read num
+  sum=`expr $sum + $num`
+
+  if [ $num -gt $max ]
+  then
+    max=$num
+  fi
+
+  if [ $num -lt $min ]
+  then
+    min=$num
+  fi
+
+  i=`expr $i + 1`
+done
+
+avg=`expr $sum / $n`
+
+echo "Sum = $sum"
+echo "Average = $avg"
+echo "Minimum = $min"
+echo "Maximum = $max"
+
+
+# HOW TO RUN
+open notepad , save as all files on desktop encoding ANSI
+#On Ubuntu write 
+cd /mnt/c/Users/Zahrah/OneDrive/Desktop
+ls
+#check if ur file there 
+
+#then give it permission 
+chmod +x program.sh
+
+#then run the program by
+bash program.sh 
+or bash program.sh 10 5
+or ./program.sh 10 5
+or ./program.sh 
+
+# if incase \r error then
+sed -i 's/\r$//' program.sh

@@ -1,97 +1,75 @@
 #include <iostream>
+#include <queue>
+
 using namespace std;
 
-class Semaphore {
-    int val;
-
-public:
-    Semaphore(int v) {
-        val = v;
+void waitSemaphore(int &s) {
+    while (s <= 0) {
+        return;
     }
+    s--;
+}
 
-    bool wait() {
-        if (val > 0) {
-            val--;
-            return true;
-        }
-        return false;
-    }
-
-    void signal() {
-        val++;
-    }
-};
-
-class ProducerConsumer {
-    Semaphore mutex, empty, full;
-
-    int buffer[5];
-    int in, out;
-
-public:
-    ProducerConsumer() : mutex(1), empty(5), full(0) {
-        in = 0;
-        out = 0;
-    }
-
-    void produce(int item) {
-
-        if (empty.wait()) {
-
-            mutex.wait();
-
-            buffer[in] = item;
-
-            cout << "Produced: " << item << endl;
-
-            in = (in + 1) % 5;
-
-            mutex.signal();
-
-            full.signal();
-        }
-        else {
-            cout << "Buffer Full!" << endl;
-        }
-    }
-
-    void consume() {
-
-        if (full.wait()) {
-
-            mutex.wait();
-
-            int item = buffer[out];
-
-            cout << "Consumed: " << item << endl;
-
-            out = (out + 1) % 5;
-
-            mutex.signal();
-
-            empty.signal();
-        }
-        else {
-            cout << "Buffer Empty!" << endl;
-        }
-    }
-};
+void signalSemaphore(int &s) {
+    s++;
+}
 
 int main() {
+    int bufferSize, choice, item = 1;
+    cout << "Enter buffer size: ";
+    cin >> bufferSize;
 
-    ProducerConsumer p;
+    queue<int> buffer;
+    int mutexLock = 1;
+    int emptySlots = bufferSize;
+    int fullSlots = 0;
 
-    p.produce(10);
-    p.produce(20);
-    p.produce(30);
+    while (true) {
+        cout << "\n1. Produce\n2. Consume\n3. Display Buffer\n4. Exit\nChoice: ";
+        cin >> choice;
 
-    p.consume();
-    p.consume();
+        if (choice == 1) {
+            if ((int)buffer.size() == bufferSize) {
+                cout << "Buffer is full. Producer must wait.\n";
+                continue;
+            }
 
-    p.produce(40);
+            waitSemaphore(emptySlots);
+            waitSemaphore(mutexLock);
+            buffer.push(item);
+            cout << "Producer produced item " << item << endl;
+            item++;
+            signalSemaphore(mutexLock);
+            signalSemaphore(fullSlots);
+        } else if (choice == 2) {
+            if (buffer.empty()) {
+                cout << "Buffer is empty. Consumer must wait.\n";
+                continue;
+            }
 
-    p.consume();
-    p.consume();
+            waitSemaphore(fullSlots);
+            waitSemaphore(mutexLock);
+            cout << "Consumer consumed item " << buffer.front() << endl;
+            buffer.pop();
+            signalSemaphore(mutexLock);
+            signalSemaphore(emptySlots);
+        } else if (choice == 3) {
+            queue<int> temp = buffer;
+            cout << "Buffer: ";
+            if (temp.empty()) {
+                cout << "empty";
+            }
+            while (!temp.empty()) {
+                cout << temp.front() << " ";
+                temp.pop();
+            }
+            cout << endl;
+        } else if (choice == 4) {
+            break;
+        } else {
+            cout << "Invalid choice.\n";
+        }
+    }
 
     return 0;
 }

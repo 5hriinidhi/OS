@@ -1,77 +1,90 @@
 #include <iostream>
+
 using namespace std;
 
-class Semaphore {
-    int val;
+int mutexLock = 1;
+int wrt = 1;
+int readCount = 0;
+int sharedData = 0;
 
-public:
-    Semaphore(int v) { val = v; }
+void waitSemaphore(int &s) {
+    while (s <= 0) {
+        return;
+    }
+    s--;
+}
 
-    bool wait() {
-        if (val > 0) {
-            val--;
-            return true;
-        }
-        return false;
+void signalSemaphore(int &s) {
+    s++;
+}
+
+void startReading(int id) {
+    waitSemaphore(mutexLock);
+    readCount++;
+    if (readCount == 1) {
+        waitSemaphore(wrt);
+    }
+    signalSemaphore(mutexLock);
+
+    cout << "Reader " << id << " is reading data = " << sharedData << endl;
+}
+
+void stopReading(int id) {
+    waitSemaphore(mutexLock);
+    readCount--;
+    cout << "Reader " << id << " finished reading.\n";
+    if (readCount == 0) {
+        signalSemaphore(wrt);
+    }
+    signalSemaphore(mutexLock);
+}
+
+void startWriting(int id) {
+    if (wrt <= 0) {
+        cout << "Writer " << id << " is waiting because resource is busy.\n";
+        return;
     }
 
-    void signal() { val++; }
-};
+    waitSemaphore(wrt);
+    sharedData += 10;
+    cout << "Writer " << id << " wrote data. New value = " << sharedData << endl;
+}
 
-class RW {
-    Semaphore mutex, wrt;
-    int readers, data;
-
-public:
-    RW() : mutex(1), wrt(1) {
-        readers = 0;
-        data = 0;
-    }
-
-    void read(int id) {
-        mutex.wait();
-
-        readers++;
-
-        if (readers == 1)
-            wrt.wait();
-
-        mutex.signal();
-
-        cout << "Reader " << id
-             << " reads " << data << endl;
-
-        mutex.wait();
-
-        readers--;
-
-        if (readers == 0)
-            wrt.signal();
-
-        mutex.signal();
-    }
-
-    void write(int id, int val) {
-        wrt.wait();
-
-        data = val;
-
-        cout << "Writer " << id
-             << " writes " << data << endl;
-
-        wrt.signal();
-    }
-};
+void stopWriting(int id) {
+    signalSemaphore(wrt);
+    cout << "Writer " << id << " finished writing.\n";
+}
 
 int main() {
-    RW r;
+    int choice, id;
 
-    r.read(1);
-    r.read(2);
+    while (true) {
+        cout << "\nReader Writer Problem\n";
+        cout << "1. Start Reading\n2. Stop Reading\n3. Start Writing\n4. Stop Writing\n5. Exit\nChoice: ";
+        cin >> choice;
 
-    r.write(1, 10);
-
-    r.read(3);
+        if (choice == 1) {
+            cout << "Enter reader id: ";
+            cin >> id;
+            startReading(id);
+        } else if (choice == 2) {
+            cout << "Enter reader id: ";
+            cin >> id;
+            stopReading(id);
+        } else if (choice == 3) {
+            cout << "Enter writer id: ";
+            cin >> id;
+            startWriting(id);
+        } else if (choice == 4) {
+            cout << "Enter writer id: ";
+            cin >> id;
+            stopWriting(id);
+        } else if (choice == 5) {
+            break;
+        } else {
+            cout << "Invalid choice.\n";
+        }
+    }
 
     return 0;
 }

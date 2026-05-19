@@ -1,153 +1,85 @@
+#include <cmath>
 #include <iostream>
 #include <map>
+#include <vector>
 
 using namespace std;
 
-// Total memory size
 int totalMemory;
+map<int, vector<pair<int, int> > > freeList;
 
-// Map:
-// block size -> number of free blocks
-map<int, int> freeBlocks;
-
-// Function to find next power of 2
-int nextPow2(int n)
-{
-    int p = 1;
-
-    while (p < n)
-        p *= 2;
-
-    return p;
-}
-
-// Function to display free blocks
-void printStatus()
-{
-    cout << "Free Blocks: ";
-
-    for (auto& kv : freeBlocks)
-    {
-        if (kv.second > 0)
-        {
-            cout << kv.first
-                 << "KB x"
-                 << kv.second
-                 << "  ";
-        }
+int nextPowerOfTwo(int n) {
+    int power = 1;
+    while (power < n) {
+        power *= 2;
     }
-
-    cout << "\n";
+    return power;
 }
 
-// Allocation Function
-int allocate(int size)
-{
-    int need = nextPow2(size);
-
-    cout << "\nAllocate "
-         << size
-         << "KB -> needs "
-         << need
-         << "KB block\n";
-
-    // Find smallest block >= needed size
-    for (auto it = freeBlocks.lower_bound(need);
-         it != freeBlocks.end();
-         ++it)
-    {
-        if (it->second > 0)
-        {
-            int blk = it->first;
-
-            freeBlocks[blk]--;
-
-            // Split blocks until desired size reached
-            while (blk > need)
-            {
-                blk /= 2;
-
-                freeBlocks[blk]++;
-
-                cout << "  Split -> 2 x "
-                     << blk
-                     << "KB blocks\n";
+void showFreeList() {
+    cout << "\nFree List:\n";
+    for (map<int, vector<pair<int, int> > >::iterator it = freeList.begin(); it != freeList.end(); ++it) {
+        if (!it->second.empty()) {
+            cout << "Block size " << it->first << ": ";
+            for (int i = 0; i < (int)it->second.size(); i++) {
+                cout << "[" << it->second[i].first << "-" << it->second[i].second << "] ";
             }
-
-            cout << "  Allocated "
-                 << need
-                 << "KB\n";
-
-            printStatus();
-
-            return need;
+            cout << endl;
         }
     }
-
-    cout << "  Allocation FAILED\n";
-
-    return -1;
 }
 
-// Release Function
-void release(int blockSize)
-{
-    cout << "\nRelease "
-         << blockSize
-         << "KB block\n";
+void allocateMemory(int request) {
+    int needed = nextPowerOfTwo(request);
+    int current = needed;
 
-    freeBlocks[blockSize]++;
+    while ((freeList.find(current) == freeList.end() || freeList[current].empty()) && current <= totalMemory) {
+        current *= 2;
+    }
 
-    // Merge buddy blocks if possible
-    while (blockSize < totalMemory)
-    {
-        if (freeBlocks[blockSize] >= 2)
-        {
-            freeBlocks[blockSize] -= 2;
+    if (current > totalMemory) {
+        cout << "Allocation failed for " << request << " bytes.\n";
+        return;
+    }
 
-            blockSize *= 2;
+    pair<int, int> block = freeList[current].back();
+    freeList[current].pop_back();
 
-            freeBlocks[blockSize]++;
+    while (current > needed) {
+        current /= 2;
+        pair<int, int> rightBlock(block.first + current, block.second);
+        block.second = block.first + current - 1;
+        freeList[current].push_back(rightBlock);
+    }
 
-            cout << "  Merged into "
-                 << blockSize
-                 << "KB block\n";
-        }
-        else
-        {
+    cout << "Allocated " << request << " bytes as block size " << needed
+         << " at [" << block.first << "-" << block.second << "]\n";
+}
+
+int main() {
+    int choice, request;
+    cout << "Enter total memory size: ";
+    cin >> totalMemory;
+
+    totalMemory = nextPowerOfTwo(totalMemory);
+    freeList[totalMemory].push_back(make_pair(0, totalMemory - 1));
+
+    while (true) {
+        cout << "\n1. Allocate\n2. Display Free List\n3. Exit\nChoice: ";
+        cin >> choice;
+
+        if (choice == 1) {
+            cout << "Enter memory request: ";
+            cin >> request;
+            allocateMemory(request);
+        } else if (choice == 2) {
+            showFreeList();
+        } else if (choice == 3) {
             break;
+        } else {
+            cout << "Invalid choice.\n";
         }
     }
-
-    printStatus();
-}
-
-// Main Function
-int main()
-{
-    totalMemory = 1024;
-
-    // Initially whole memory is free
-    freeBlocks[1024] = 1;
-
-    cout << "=== Buddy System "
-         << "(Total: "
-         << totalMemory
-         << "KB) ===\n";
-
-    printStatus();
-
-    // Allocation Examples
-    int b1 = allocate(100);   // gets 128KB
-
-    int b2 = allocate(240);   // gets 256KB
-
-    int b3 = allocate(64);    // gets 64KB
-
-    // Release Examples
-    release(b1);
-
-    release(b3);
 
     return 0;
 }
