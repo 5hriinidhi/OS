@@ -203,36 +203,54 @@ int main()
 {
     vector<int> requests =
     {
-        176,
-        79,
-        34,
-        60,
-        92,
-        11,
-        41,
-        114
+        176, 79, 34, 60,
+        92, 11, 41, 114
     };
 
     int head = 50;
-
     int diskSize = 200;
 
-    cout << "Requests: ";
+    int choice;
 
-    for (int r : requests)
-        cout << r << " ";
+    do
+    {
+        cout << "\n===== Disk Scheduling Menu =====\n";
+        cout << "1. FCFS\n";
+        cout << "2. SSTF\n";
+        cout << "3. SCAN\n";
+        cout << "4. C-SCAN\n";
+        cout << "5. Exit\n";
 
-    cout << "\nInitial Head: "
-         << head
-         << "\n";
+        cout << "Enter choice: ";
+        cin >> choice;
 
-    fcfs(requests, head);
+        switch(choice)
+        {
+            case 1:
+                fcfs(requests, head);
+                break;
 
-    sstf(requests, head);
+            case 2:
+                sstf(requests, head);
+                break;
 
-    scan(requests, head, diskSize);
+            case 3:
+                scan(requests, head, diskSize);
+                break;
 
-    cscan(requests, head, diskSize);
+            case 4:
+                cscan(requests, head, diskSize);
+                break;
+
+            case 5:
+                cout << "Exiting...\n";
+                break;
+
+            default:
+                cout << "Invalid choice!\n";
+        }
+
+    } while(choice != 5);
 
     return 0;
 }

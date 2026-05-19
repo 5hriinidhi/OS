@@ -283,7 +283,6 @@ void prioritySched(vector<Process> p)
 // ─────────────────────────────────────────────────────────
 int main()
 {
-    // pid, arrival time, burst time, priority
     vector<Process> procs =
     {
         {1, 0, 5, 2},
@@ -292,13 +291,52 @@ int main()
         {4, 3, 2, 4}
     };
 
-    fcfs(procs);
+    int choice;
 
-    sjf(procs);
+    do
+    {
+        cout << "\n===== CPU Scheduling Menu =====\n";
+        cout << "1. FCFS\n";
+        cout << "2. SJF\n";
+        cout << "3. Round Robin\n";
+        cout << "4. Priority Scheduling\n";
+        cout << "5. Exit\n";
+        cout << "Enter choice: ";
+        cin >> choice;
 
-    roundRobin(procs, 2);
+        switch(choice)
+        {
+            case 1:
+                fcfs(procs);
+                break;
 
-    prioritySched(procs);
+            case 2:
+                sjf(procs);
+                break;
+
+            case 3:
+            {
+                int q;
+                cout << "Enter Time Quantum: ";
+                cin >> q;
+
+                roundRobin(procs, q);
+                break;
+            }
+
+            case 4:
+                prioritySched(procs);
+                break;
+
+            case 5:
+                cout << "Exiting...\n";
+                break;
+
+            default:
+                cout << "Invalid choice!\n";
+        }
+
+    } while(choice != 5);
 
     return 0;
 }
